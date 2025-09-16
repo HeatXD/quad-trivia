@@ -5,6 +5,7 @@ import com.heatxd.quadtrivia.service.TriviaService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.WebSession;
 import reactor.core.publisher.Mono;
 
 @RestController
@@ -19,5 +20,10 @@ public class TriviaController {
     @GetMapping("/categories")
     public Mono<CategoryResponse> getCategories() {
         return triviaService.getCategories();
+    }
+
+    @GetMapping("/token")
+    public Mono<String> getSessionToken(WebSession session) {
+        return triviaService.getSessionToken(session);
     }
 }
