@@ -3,6 +3,7 @@ package com.heatxd.quadtrivia.service;
 import com.heatxd.quadtrivia.dto.CategoryResponse;
 import com.heatxd.quadtrivia.dto.TriviaQuestionResponse;
 import com.heatxd.quadtrivia.dto.TriviaTokenResponse;
+import com.heatxd.quadtrivia.model.TriviaQuestionModel;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
@@ -10,16 +11,24 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.server.WebSession;
 import reactor.core.publisher.Mono;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.List;
+import java.util.*;
 
 @Service
 public class TriviaService {
     private final WebClient webClient;
+    private final String triviaSecret;
 
     public TriviaService(@Qualifier("triviaClient") WebClient client) {
         this.webClient = client;
+        this.triviaSecret = genTriviaSecret();
+    }
+
+    private String genTriviaSecret() {
+        return UUID.randomUUID().toString().replace("-", "");
     }
 
     @Cacheable("categories")
@@ -28,11 +37,71 @@ public class TriviaService {
                 .uri("/api_category.php")
                 .retrieve()
                 .bodyToMono(CategoryResponse.class)
-                .onErrorResume(e -> Mono.just(new CategoryResponse(List.of())));
+                .onErrorResume(e -> Mono.empty());
     }
 
-    public Mono<TriviaQuestionResponse> getQuestions() {
-        return Mono.empty();
+    private Mono<TriviaQuestionResponse> fetchQuestions (WebSession session, int amount, int category, String difficulty) {
+        return getSessionToken(session)
+                .flatMap(token -> webClient.get()
+                        .uri(uriBuilder -> {
+                            var builder = uriBuilder.path("/api.php")
+                                    .queryParam("amount", amount)
+                                    .queryParam("token", token);
+                            if (category > 0) builder.queryParam("category", category);
+                            if (difficulty != null && !difficulty.isEmpty()) builder.queryParam("difficulty", difficulty);
+                            // System.out.println("Fetching questions with URI: " + uriBuilder.build());
+                            return builder.build();
+                        })
+                        .retrieve()
+                        .bodyToMono(TriviaQuestionResponse.class)
+                )
+                .onErrorResume(e -> {
+                    System.err.println("Failed to fetch OpenTDB Questions: " + e.getMessage());
+                    return Mono.empty();
+                });
+    }
+
+    public Mono<TriviaQuestionModel> getQuestions(WebSession session, int amount, int category, String difficulty) {
+        return fetchQuestions(session, amount, category, difficulty)
+                .map( response -> {
+                    var questionList = Optional.of(response.results()).orElse(Collections.emptyList());
+                    var questions = questionList.stream()
+                            .map(q -> {
+                                // combine correct + incorrect answers
+                                var answers = new ArrayList<String>();
+                                answers.add(q.correctAnswer());
+                                answers.addAll(q.incorrectAnswers());
+                                // shuffle
+                                Collections.shuffle(answers);
+                                // generate a one-way hmac token for the correct answer
+                                String token = genToken(q.correctAnswer());
+                                return new TriviaQuestionModel.TriviaQuestion(
+                                        q.type(),
+                                        q.difficulty(),
+                                        q.category(),
+                                        q.question(),
+                                        answers,
+                                        token
+                                );
+                            })
+                            .toList();
+                    return new TriviaQuestionModel(questions);
+                })
+                .onErrorResume(e -> {
+                    System.err.println("Failed to convert OpenTDB Questions: " + e.getMessage());
+                    return Mono.empty();
+                });
+    }
+
+    private String genToken(String answer) {
+        try {
+            Mac mac = Mac.getInstance("HmacSHA256");
+            mac.init(new SecretKeySpec(triviaSecret.getBytes(), "HmacSHA256"));
+            byte[] hmac = mac.doFinal(answer.getBytes());
+            return Base64.getUrlEncoder().withoutPadding().encodeToString(hmac);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public Mono<String> getSessionToken(WebSession session) {
@@ -58,5 +127,20 @@ public class TriviaService {
                     System.err.println("Failed to fetch OpenTDB token: " + e.getMessage());
                     return Mono.empty();
                 });
+    }
+
+    public Mono<Boolean> checkAnswer(String token, String answer) {
+        try {
+            // recreate the HMAC from the submitted answer using the same secret
+            Mac mac = Mac.getInstance("HmacSHA256");
+            mac.init(new SecretKeySpec(triviaSecret.getBytes(), "HmacSHA256"));
+            byte[] hmac = mac.doFinal(answer.getBytes());
+            String generatedToken = Base64.getUrlEncoder().withoutPadding().encodeToString(hmac);
+
+            // compare generated token with the token sent from the client
+            return Mono.just(generatedToken.equals(token));
+        } catch (Exception e) {
+            return Mono.error(new RuntimeException("Failed to validate answer", e));
+        }
     }
 }

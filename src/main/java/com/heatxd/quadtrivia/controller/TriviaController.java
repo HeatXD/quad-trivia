@@ -1,10 +1,9 @@
 package com.heatxd.quadtrivia.controller;
 
 import com.heatxd.quadtrivia.dto.CategoryResponse;
+import com.heatxd.quadtrivia.model.TriviaQuestionModel;
 import com.heatxd.quadtrivia.service.TriviaService;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.WebSession;
 import reactor.core.publisher.Mono;
 
@@ -25,5 +24,23 @@ public class TriviaController {
     @GetMapping("/token")
     public Mono<String> getSessionToken(WebSession session) {
         return triviaService.getSessionToken(session);
+    }
+
+    @GetMapping("/questions")
+    public Mono<TriviaQuestionModel> getQuestions(
+            WebSession session,
+            @RequestParam(defaultValue = "10") int amount,
+            @RequestParam(defaultValue = "0") int category,
+            @RequestParam(defaultValue = "") String difficulty
+    ) {
+        return triviaService.getQuestions(session, amount, category, difficulty);
+    }
+
+    @GetMapping("/validate")
+    public Mono<Boolean> checkAnswer(
+            @RequestParam String token,
+            @RequestParam String answer
+    ) {
+        return triviaService.checkAnswer(token, answer);
     }
 }
