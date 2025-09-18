@@ -1,28 +1,31 @@
 <!doctype html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="css/index.css">
     <title>QUAD Trivia</title>
 </head>
+
 <body class="content-container">
-  <header>
+    <header>
         <h1>QUAD Trivia</h1>
         <div class="header-buttons">
-            <button class="header-btn reset">Reset</button>
+            <button class="header-btn reset" onclick="resetTrivia()">Reset</button>
         </div>
         <div class="header-buttons">
-            <button class="header-btn start">Start Trivia</button>
+            <button class="header-btn start" onclick="startTrivia(this)">Start Trivia</button>
         </div>
     </header>
     <div class="difficulty nav-section">
         <div class="nav-content">
             <h2>Difficulty</h2>
             <ul class="button-list">
-                <li><button class="nav-button active">Easy</button></li>
-                <li><button class="nav-button">Medium</button></li>
-                <li><button class="nav-button">Hard</button></li>
+                <li><button class="nav-button active" onclick="changeDifficulty(this, 'all')">All</button></li>
+                <li><button class="nav-button" onclick="changeDifficulty(this, 'easy')">Easy</button></li>
+                <li><button class="nav-button" onclick="changeDifficulty(this, 'medium')">Medium</button></li>
+                <li><button class="nav-button" onclick="changeDifficulty(this, 'hard')">Hard</button></li>
             </ul>
         </div>
     </div>
@@ -30,24 +33,20 @@
         <div class="nav-content">
             <h2>Category</h2>
             <ul class="button-list">
-                <li><button class="nav-button active">General Knowledge</button></li>
-                <li><button class="nav-button">Science</button></li>
-                <li><button class="nav-button">History</button></li>
-                <li><button class="nav-button">Sports</button></li>
-                <li><button class="nav-button">Entertainment</button></li>
-                <li><button class="nav-button">Geography</button></li>
             </ul>
         </div>
     </div>
     <div class="trivia">
         <div>
             <h2>Trivia Questions</h2>
-            <p>This area will expand to fill available space</p>
+            <p>Select your settings and then start!</p>
         </div>
     </div>
     <footer>
         <p>QUAD Solutions Trivia Assignment by Jamie Meyer</p>
     </footer>
 </body>
-    <script src="js/index.js"></script>
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+<script src="js/index.js"></script>
+
 </html>
