@@ -68,7 +68,7 @@ const renderQuestion = (question) => {
         const btn = document.createElement("button");
         btn.textContent = decodeHTML(answer);
         btn.classList.add("trivia-button");
-        btn.onclick = () => handleAnswer(answer, question);
+        btn.onclick = () => handleAnswer(btn, answer, question);
         li.appendChild(btn);
         ul.appendChild(li);
     });
@@ -81,9 +81,34 @@ const showMessage = (message) => {
     triviaDiv.innerHTML = `<p>${message}</p>`;
 };
 
-const handleAnswer = (selectedAnswer, question) => {
-    console.log("Selected answer:", selectedAnswer, "Token:", question.token);
+const handleAnswer = (button, selectedAnswer, question) => {
+    //console.log("Selected answer:", selectedAnswer, "Token:", question.token, "Instant:", question.instant);
+    validateAnswer(button, selectedAnswer, question);
+};
 
+const validateAnswer = async (button, selectedAnswer, question) => {
+    if (button.classList.contains("correct") || button.classList.contains("incorrect")) return;
+    try {
+        const response = await axios.get("/trivia/validate", {
+            params: {
+                token: question.token,
+                instant: question.instant,
+                answer: selectedAnswer,
+            },
+        });
+
+        if (response.data === true) {
+            button.classList.add("correct");
+        } else {
+            button.classList.add("incorrect");
+        }
+
+    } catch (err) {
+        console.error("Failed to validate answer:", err);
+    }
+}
+
+const nextQuestion = () => {
     TriviaState.currentQuestionIndex++;
     if (TriviaState.currentQuestionIndex < TriviaState.questions.length) {
         renderQuestion(TriviaState.questions[TriviaState.currentQuestionIndex]);
@@ -117,21 +142,22 @@ const startTrivia = (button) => {
     disableControls(true);
     fetchQuestions(TriviaState.difficulty, TriviaState.category);
     button.disabled = true;
+    document.querySelector(".trivia > button").classList.remove("hidden");
 };
 
 const resetTrivia = () => {
     disableControls(false);
-    TriviaState.difficulty = "all";
-    TriviaState.category = 0;
     TriviaState.questions = [];
     TriviaState.currentQuestionIndex = 0;
 
     document.querySelector(".trivia > div").innerHTML =
-        "<h2>Trivia Questions</h2><p>Select your settings and then start!</p>";
+        "<h2>Trivia Questions</h2><p>Select your settings and then press start!</p>";
+
+    document.querySelector(".trivia > button").classList.add("hidden");
 };
 
 const disableControls = (disable) => {
-    document.querySelectorAll(".category .nav-button, .difficulty .nav-button, .header-btn")
+    document.querySelectorAll(".category .nav-button, .difficulty .nav-button, .header-btn.start")
         .forEach((btn) => (btn.disabled = disable));
 };
 

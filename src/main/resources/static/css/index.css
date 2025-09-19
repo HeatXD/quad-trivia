@@ -103,7 +103,6 @@ header h1 {
     gap: 1rem;
 }
 
-/* Navigation button styles */
 .nav-section h2 {
     margin: 0;
     font-size: 1.2rem;
@@ -217,6 +216,35 @@ header h1 {
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-direction: column;
+}
+
+.trivia>div>.button-list {
+    padding: 1rem;
+}
+
+.trivia>button {
+    margin-top: 2rem;
+    background-color: rgba(255, 255, 255, 0.432);
+    border: 2px solid rgba(0, 0, 0, 0.685);
+    color: black;
+    padding: 0.75rem 0.75rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+    font-weight: 500;
+    text-align: center;
+    min-width: 20%;
+}
+
+.trivia>button:hover {
+    background-color: rgba(119, 118, 118, 0.432);
+    transform: translateY(-2px);
+}
+
+.trivia>button.hidden {
+    display: none;
 }
 
 .trivia-button {
@@ -235,6 +263,20 @@ header h1 {
     box-sizing: border-box;
     white-space: nowrap;
     min-width: 100%;
+}
+
+.trivia-button:hover {
+    transform: translateY(-2px);
+}
+
+.trivia-button.correct {
+    background-color: rgb(138, 247, 219);
+    border: 2px solid rgb(72, 255, 200);
+}
+
+.trivia-button.incorrect {
+    background-color: rgb(245, 101, 101);
+    border: 2px solid rgb(252, 50, 50);
 }
 
 footer {
@@ -258,7 +300,6 @@ footer {
         "footer footer footer";
 }
 
-/* Even larger screens */
 @media (min-width: 1024px) {
     .content-container {
         grid-template-columns: 250px 250px 1fr;

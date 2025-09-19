@@ -74,14 +74,15 @@ public class TriviaService {
                                 // shuffle
                                 Collections.shuffle(answers);
                                 // generate a one-way hmac token for the correct answer
-                                String token = genToken(q.correctAnswer());
+                                HMACResult result = genToken(q.correctAnswer());
                                 return new TriviaQuestionModel.TriviaQuestion(
                                         q.type(),
                                         q.difficulty(),
                                         q.category(),
                                         q.question(),
                                         answers,
-                                        token
+                                        result.token(),
+                                        result.instant()
                                 );
                             })
                             .toList();
@@ -93,12 +94,15 @@ public class TriviaService {
                 });
     }
 
-    private String genToken(String answer) {
+    private HMACResult genToken(String answer) {
         try {
             Mac mac = Mac.getInstance("HmacSHA256");
             mac.init(new SecretKeySpec(triviaSecret.getBytes(), "HmacSHA256"));
-            byte[] hmac = mac.doFinal(answer.getBytes());
-            return Base64.getUrlEncoder().withoutPadding().encodeToString(hmac);
+            String instant = Instant.now().toString();
+            String payload = answer + instant;
+            byte[] hmac = mac.doFinal(payload.getBytes());
+            String token = Base64.getUrlEncoder().withoutPadding().encodeToString(hmac);
+            return new HMACResult(token, instant);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -129,18 +133,20 @@ public class TriviaService {
                 });
     }
 
-    public Mono<Boolean> checkAnswer(String token, String answer) {
+    public Mono<Boolean> checkAnswer(String token, String instant, String answer) {
         try {
             // recreate the HMAC from the submitted answer using the same secret
             Mac mac = Mac.getInstance("HmacSHA256");
             mac.init(new SecretKeySpec(triviaSecret.getBytes(), "HmacSHA256"));
-            byte[] hmac = mac.doFinal(answer.getBytes());
+            String payload = answer + instant;
+            byte[] hmac = mac.doFinal(payload.getBytes());
             String generatedToken = Base64.getUrlEncoder().withoutPadding().encodeToString(hmac);
-
             // compare generated token with the token sent from the client
             return Mono.just(generatedToken.equals(token));
         } catch (Exception e) {
             return Mono.error(new RuntimeException("Failed to validate answer", e));
         }
     }
+
+    private record HMACResult(String token, String instant) {}
 }

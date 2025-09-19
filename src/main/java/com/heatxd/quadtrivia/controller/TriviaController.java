@@ -39,8 +39,9 @@ public class TriviaController {
     @GetMapping("/validate")
     public Mono<Boolean> checkAnswer(
             @RequestParam String token,
+            @RequestParam String instant,
             @RequestParam String answer
     ) {
-        return triviaService.checkAnswer(token, answer);
+        return triviaService.checkAnswer(token, instant, answer);
     }
 }

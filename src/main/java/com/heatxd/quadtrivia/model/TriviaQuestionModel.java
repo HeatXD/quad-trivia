@@ -9,6 +9,7 @@ public record TriviaQuestionModel(List<TriviaQuestion> questions) {
             String category,
             String question,
             List<String> answers,
-            String token
+            String token,
+            String instant
     ) { }
 }
