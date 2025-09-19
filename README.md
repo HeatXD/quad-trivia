@@ -2,7 +2,7 @@
 
 A Spring Boot WebFlux trivia game that fetches questions from [OpenTDB](https://opentdb.com).
 
-A running example can be found at http://trivia.heatxd.dev
+A running example can be found at http://trivia.heatxd.dev hosted using the free tier on [Koyeb](https://www.koyeb.com)
 
 ## Requirements
 - Java 21+
