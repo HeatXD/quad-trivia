@@ -1,6 +1,7 @@
 # Quad Trivia
 
 A Spring Boot WebFlux trivia game that fetches questions from [OpenTDB](https://opentdb.com).
+a running example can be found at http://trivia.heatxd.dev
 
 ## Requirements
 - Java 21+
